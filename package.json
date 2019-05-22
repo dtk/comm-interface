@@ -1,6 +1,6 @@
 {
     "name": "comm-interface",
-    "version": "1.5.2",
+    "version": "1.5.3",
     "description": "Communication interface",
     "main": "out/index.js",
     "types": "out/index.d.ts",
@@ -30,6 +30,10 @@
         "nats": "^1.2.6",
         "protobufjs": "^6.8.8",
         "ts-nats": "^1.2.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dtk/comm-interface.git"
     },
     "files": [
         "out/**/*"
