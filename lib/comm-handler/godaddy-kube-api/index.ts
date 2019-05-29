@@ -50,12 +50,8 @@ export default class GoDaddyKubeApi {
     return await eval(`${this.basePath}.namespace('${namespace}').${kind}.post( { body: body } )`);
   }
   
-  async getCRDWatch(plural: string) {
-    return await eval(`${this.basePath}.watch.${plural}`);
-  }
-
-  async getWatch(namespace: string, plural: string) {
-    return await eval(`this.client.apis.apps.v1.watch.namespaces('${namespace}').${plural}`);
+  async getCRDWatch(plural: string, namespace: string = 'default') {
+    return await eval(`${this.basePath}.namespaces('${namespace}').watch.${plural}`);
   }
 
   async getSimplePath() {
