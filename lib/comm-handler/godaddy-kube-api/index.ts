@@ -54,6 +54,10 @@ export default class GoDaddyKubeApi {
     return await eval(`${this.basePath}.watch.${plural}`);
   }
 
+  async getWatch(namespace: string, plural: string) {
+    return await eval(`this.client.apis.apps.v1.watch.namespaces('${namespace}').${plural}`);
+  }
+
   async getSimplePath() {
     return this.basePath;
   }
