@@ -1,41 +1,41 @@
 {
-    "name": "comm-interface",
-    "version": "1.5.7",
-    "description": "Communication interface",
-    "main": "out/index.js",
-    "types": "out/index.d.ts",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "tsc && node out/index.js"
-    },
-    "author": "",
-    "license": "ISC",
-    "devDependencies": {
-        "prettier": "^1.16.4",
-        "typescript": "^3.4.3"
-    },
-    "dependencies": {
-        "@babel/cli": "^7.4.3",
-        "@babel/core": "^7.4.3",
-        "@babel/node": "^7.2.2",
-        "@babel/plugin-transform-runtime": "^7.4.3",
-        "@babel/preset-env": "^7.4.3",
-        "@babel/register": "^7.4.0",
-        "@babel/runtime": "^7.4.3",
-        "@grpc/proto-loader": "^0.4.0",
-        "@kubernetes/client-node": "^0.8.2",
-        "grpc": "^1.19.0",
-        "grpc-promise": "^1.4.0",
-        "kubernetes-client": "^7.0.1",
-        "nats": "^1.2.6",
-        "protobufjs": "^6.8.8",
-        "ts-nats": "^1.2.2"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/dtk/comm-interface.git"
-    },
-    "files": [
-        "out/**/*"
-    ]
+  "name": "comm-interface",
+  "version": "1.5.8",
+  "description": "Communication interface",
+  "main": "out/index.js",
+  "types": "out/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "tsc && node out/index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^1.16.4",
+    "typescript": "^3.4.3"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
+    "@babel/node": "^7.2.2",
+    "@babel/plugin-transform-runtime": "^7.4.3",
+    "@babel/preset-env": "^7.4.3",
+    "@babel/register": "^7.4.0",
+    "@babel/runtime": "^7.4.3",
+    "@grpc/proto-loader": "^0.4.0",
+    "@kubernetes/client-node": "^0.8.2",
+    "grpc": "^1.19.0",
+    "grpc-promise": "^1.4.0",
+    "kubernetes-client": "^7.0.1",
+    "nats": "^1.2.6",
+    "protobufjs": "^6.8.8",
+    "ts-nats": "^1.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dtk/comm-interface.git"
+  },
+  "files": [
+    "out/**/*"
+  ]
 }
