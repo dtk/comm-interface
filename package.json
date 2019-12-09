@@ -1,6 +1,6 @@
 {
   "name": "comm-interface",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Communication interface",
   "main": "out/index.js",
   "types": "out/index.d.ts",
