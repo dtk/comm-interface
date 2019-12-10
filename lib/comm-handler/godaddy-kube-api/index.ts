@@ -62,9 +62,9 @@ export default class GoDaddyKubeApi {
     );
   }
 
-  async getCRDWatch(namespace: string, plural: string) {
+  async getCRDWatch(name: string, namespace: string, plural: string) {
     return await eval(
-      `${this.basePath}.watch.namespace('${namespace}').${plural}`
+      `${this.basePath}.watch.namespaces('${namespace}').${plural}.${name}`
     );
   }
 
