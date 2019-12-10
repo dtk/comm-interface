@@ -62,10 +62,19 @@ export default class GoDaddyKubeApi {
     );
   }
 
+  /**
+   * Returns object containing provided name, namespace and
+   * watch object that is used to watch the resource
+   * @param name resource name
+   * @param namespace namespace the resource is located in
+   * @param plural resource plural
+   */
   async getCRDWatch(name: string, namespace: string, plural: string) {
-    return await eval(
-      `${this.basePath}.watch.namespaces('${namespace}').${plural}('${name}')`
-    );
+    return {
+      name,
+      namespace,
+      kubeWatchObject: await eval(`${this.basePath}.watch.${plural}`),
+    };
   }
 
   async getSimplePath() {
