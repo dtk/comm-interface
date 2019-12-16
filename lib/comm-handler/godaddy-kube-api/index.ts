@@ -74,6 +74,7 @@ export default class GoDaddyKubeApi {
     return {
       name,
       namespace,
+      plural,
       kubeWatchObject: await eval(`${this.basePath}.watch.${plural}`),
     };
   }
@@ -98,7 +99,7 @@ export default class GoDaddyKubeApi {
       jsonStream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
-          promiseCallback(resolve, reject);
+          promiseCallback(event, stream, resolve, reject);
         }
       });
     });
