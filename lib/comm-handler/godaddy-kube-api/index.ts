@@ -1,5 +1,6 @@
 const Client = require('kubernetes-client').Client;
 const K8sConfig = require('kubernetes-client').config;
+const JSONStream = require('json-stream');
 
 export default class GoDaddyKubeApi {
   private client: any;
@@ -75,6 +76,32 @@ export default class GoDaddyKubeApi {
       namespace,
       kubeWatchObject: await eval(`${this.basePath}.watch.${plural}`),
     };
+  }
+
+  /**
+   * Returns object containing provided name, namespace and
+   * watch object that is used to watch the resource
+   * @param name resource name
+   * @param namespace namespace the resource is located in
+   * @param plural resource plural
+   */
+  async getWatchPromise(
+    name: string,
+    namespace: string,
+    plural: string,
+    promiseCallback: Function
+  ) {
+    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    const jsonStream = new JSONStream();
+    stream.pipe(jsonStream);
+    return new Promise(async (resolve, reject) => {
+      jsonStream.on('data', async (event: any) => {
+        const { metadata } = event.object;
+        if (name == metadata.name && namespace == metadata.namespace) {
+          promiseCallback(resolve, reject);
+        }
+      });
+    });
   }
 
   async getSimplePath() {
