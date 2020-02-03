@@ -93,6 +93,9 @@ export default class GoDaddyKubeApi {
     promiseCallback: Function
   ) {
     const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    stream.on('end', () => {
+      this.getWatchPromise(name, namespace, plural, promiseCallback);
+    });
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
