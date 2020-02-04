@@ -1,3 +1,5 @@
+import { COMM_INTERFACE } from '../../constants';
+
 const Client = require('kubernetes-client').Client;
 const K8sConfig = require('kubernetes-client').config;
 const JSONStream = require('json-stream');
@@ -22,7 +24,7 @@ export default class GoDaddyKubeApi {
       this.client.loadSpec();
     } else if (configMethod === 'fromKubeconfig()') {
       this.client = new Client({ config: config, version: clientVersion });
-    } else throw new Error('config method not recognized');
+    } else throw new Error(`${COMM_INTERFACE} config method not recognized`);
     this.basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
   }
 
@@ -79,30 +81,81 @@ export default class GoDaddyKubeApi {
     };
   }
 
+  reInitializeWatch(
+    steps: any,
+    actionId: string,
+    name: string,
+    namespace: string
+  ) {
+    const actionObject = steps.find((element: any) => {
+      return element.id === actionId;
+    });
+    const { state, parentId } = actionObject;
+    const parentActionObject = steps.find((element: any) => {
+      return element.id === parentId;
+    });
+    if (!actionObject)
+      throw new Error(
+        `${COMM_INTERFACE} Executable action with id ${actionId} not found in action instance: name '${name}', namespace '${namespace}'`
+      );
+    if (!parentActionObject)
+      throw new Error(
+        `${COMM_INTERFACE} Abstract action with id ${parentId} not found in action instance: name '${name}', namespace '${namespace}'`
+      );
+    console.log(
+      `${COMM_INTERFACE} Watch ended. Action state is ${state}, parent state is ${parentActionObject.state}`
+    );
+    return state === 'EXECUTING' && !(parentActionObject.state === 'FAILURE');
+  }
+
   /**
    * Returns object containing provided name, namespace and
    * watch object that is used to watch the resource
    * @param name resource name
    * @param namespace namespace the resource is located in
    * @param plural resource plural
+   * @param executableActionId must be provided when watching 'actions' for handling of 'end' event
    */
   async getWatchPromise(
     name: string,
     namespace: string,
     plural: string,
-    promiseCallback: Function
+    promiseCallback: Function,
+    actionId: string = ''
   ) {
     const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
-    stream.on('end', () => {
-      this.getWatchPromise(name, namespace, plural, promiseCallback);
-    });
+    if (actionId) {
+      stream.on('end', async () => {
+        const actionInstancePath = await this.getBaseCRDInstancePath(
+          namespace,
+          plural,
+          name
+        );
+        const actionInstance = await actionInstancePath.get();
+        if (
+          !this.reInitializeWatch(
+            actionInstance.body.spec.status.steps,
+            actionId,
+            name,
+            namespace
+          )
+        ) {
+          stream.abort();
+        }
+        console.log(
+          `${COMM_INTERFACE} Reinitializing watch on action with id: ${actionId}`
+        );
+        this.getWatchPromise(name, namespace, plural, promiseCallback);
+      });
+    }
+
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
       jsonStream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
-          promiseCallback(event, stream, resolve, reject);
+          const result = promiseCallback(event, stream, resolve, reject);
         }
       });
     });
