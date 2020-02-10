@@ -81,7 +81,7 @@ export default class GoDaddyKubeApi {
     };
   }
 
-  reInitializeWatch(
+  getActionStates(
     steps: any,
     actionId: string,
     name: string,
@@ -105,7 +105,7 @@ export default class GoDaddyKubeApi {
     console.log(
       `${COMM_INTERFACE} Watch ended. Action state is ${state}, parent state is ${parentActionObject.state}`
     );
-    return state === 'EXECUTING' && !(parentActionObject.state === 'FAILURE');
+    return { actionState: state, parentState: parentActionObject.state };
   }
 
   /**
@@ -121,7 +121,8 @@ export default class GoDaddyKubeApi {
     namespace: string,
     plural: string,
     promiseCallback: Function,
-    actionId: string = ''
+    actionId: string = '',
+    watchEndedCallback: Function = () => {}
   ) {
     const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
     if (actionId) {
@@ -132,30 +133,31 @@ export default class GoDaddyKubeApi {
           name
         );
         const actionInstance = await actionInstancePath.get();
-        if (
-          !this.reInitializeWatch(
-            actionInstance.body.spec.status.steps,
-            actionId,
-            name,
-            namespace
-          )
-        ) {
-          stream.abort();
-        }
-        console.log(
-          `${COMM_INTERFACE} Reinitializing watch on action with id: ${actionId}`
+        const { actionState, parentState } = this.getActionStates(
+          actionInstance.body.spec.status.steps,
+          actionId,
+          name,
+          namespace
         );
-        this.getWatchPromise(name, namespace, plural, promiseCallback);
+        stream.abort();
+        await watchEndedCallback(
+          actionState === 'EXECUTING' && !(parentState === 'FAILURE'),
+          this,
+          { name, namespace, plural }
+        );
       });
     }
 
+    console.log(
+      `${COMM_INTERFACE} Initializing watch on action with id: ${actionId}`
+    );
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
       jsonStream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
-          const result = promiseCallback(event, stream, resolve, reject);
+          promiseCallback(event, stream, resolve, reject);
         }
       });
     });
