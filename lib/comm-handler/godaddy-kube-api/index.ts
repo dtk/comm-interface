@@ -1,4 +1,4 @@
-import { COMM_INTERFACE } from '../../constants';
+import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 
 const Client = require('kubernetes-client').Client;
 const K8sConfig = require('kubernetes-client').config;
@@ -7,6 +7,7 @@ const JSONStream = require('json-stream');
 export default class GoDaddyKubeApi {
   private client: any;
   private basePath: any;
+  private watchTimeoutMS: number;
   /**
    *
    * @param configMethod i.e: fromKubeconfig()
@@ -16,8 +17,10 @@ export default class GoDaddyKubeApi {
     endpoint: string,
     crdVersion: string,
     configMethod: string,
-    clientVersion: string = '1.9'
+    clientVersion: string = '1.9',
+    watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
+    this.watchTimeoutMS = watchTimeoutMS;
     const config = eval(`K8sConfig.${configMethod}`);
     if (configMethod === 'getInCluster()') {
       this.client = new Client({ config: config });
@@ -154,6 +157,36 @@ export default class GoDaddyKubeApi {
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
+      jsonStream.on('data', async (event: any) => {
+        const { metadata } = event.object;
+        if (name == metadata.name && namespace == metadata.namespace) {
+          promiseCallback(event, stream, resolve, reject);
+        }
+      });
+    });
+  }
+
+  /**
+   * Returns object containing provided name, namespace and
+   * watch object that is used to watch the resource
+   * @param name resource name
+   * @param namespace namespace the resource is located in
+   * @param plural resource plural
+   */
+  async getWatchPromiseWTimeout(
+    name: string,
+    namespace: string,
+    plural: string,
+    promiseCallback: Function
+  ) {
+    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    const jsonStream = new JSONStream();
+    stream.pipe(jsonStream);
+    return new Promise(async (resolve, reject) => {
+      setTimeout(() => {
+        stream.abort();
+        reject({ watchTimeout: 'Watch timed out' });
+      }, this.watchTimeoutMS);
       jsonStream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
