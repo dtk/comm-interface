@@ -151,9 +151,6 @@ export default class GoDaddyKubeApi {
       });
     }
 
-    console.log(
-      `${COMM_INTERFACE} Initializing watch on action with id: ${actionId}`
-    );
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
