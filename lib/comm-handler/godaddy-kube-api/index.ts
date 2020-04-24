@@ -99,11 +99,11 @@ export default class GoDaddyKubeApi {
     });
     if (!actionObject)
       throw new Error(
-        `${COMM_INTERFACE} Executable action with id ${actionId} not found in action instance: name '${name}', namespace '${namespace}'`
+        `${COMM_INTERFACE} Executable action with id ${actionId} not found in workflow instance: name '${name}', namespace '${namespace}'`
       );
     if (!parentActionObject)
       throw new Error(
-        `${COMM_INTERFACE} Abstract action with id ${parentId} not found in action instance: name '${name}', namespace '${namespace}'`
+        `${COMM_INTERFACE} Abstract action with id ${parentId} not found in workflow instance: name '${name}', namespace '${namespace}'`
       );
     console.log(
       `${COMM_INTERFACE} Watch ended. Action state is ${state}, parent state is ${parentActionObject.state}`
@@ -117,7 +117,7 @@ export default class GoDaddyKubeApi {
    * @param name resource name
    * @param namespace namespace the resource is located in
    * @param plural resource plural
-   * @param executableActionId must be provided when watching 'actions' for handling of 'end' event
+   * @param executableActionId must be provided when watching 'workflowinstance' for handling of 'end' event
    */
   async getWatchPromise(
     name: string,
@@ -130,14 +130,14 @@ export default class GoDaddyKubeApi {
     const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
     if (actionId) {
       stream.on('end', async () => {
-        const actionInstancePath = await this.getBaseCRDInstancePath(
+        const workflowInstancePath = await this.getBaseCRDInstancePath(
           namespace,
           plural,
           name
         );
-        const actionInstance = await actionInstancePath.get();
+        const workflowInstance = await workflowInstancePath.get();
         const { actionState, parentState } = this.getActionStates(
-          actionInstance.body.spec.status.steps,
+          workflowInstance.body.spec.status.steps,
           actionId,
           name,
           namespace
