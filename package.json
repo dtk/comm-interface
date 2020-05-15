@@ -1,5 +1,5 @@
 {
-  "name": "comm-interface",
+  "name": "@dtk/comm-interface",
   "version": "0.0.2",
   "description": "Communication interface",
   "main": "out/index.js",
