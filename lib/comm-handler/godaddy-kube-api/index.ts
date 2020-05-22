@@ -3,32 +3,45 @@ import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 const Client = require('kubernetes-client').Client;
 const K8sConfig = require('kubernetes-client').config;
 const JSONStream = require('json-stream');
-
+const Request = require('kubernetes-client/backends/request');
 export default class GoDaddyKubeApi {
   private client: any;
   private basePath: any;
   private watchTimeoutMS: number;
+
+  constructor(
+    client: any,
+    basePath: string,
+    watchTimeoutMS: number = WATCH_TIMEOUT_MS
+  ) {
+    this.watchTimeoutMS = watchTimeoutMS;
+    this.basePath = basePath;
+    this.client = client;
+  }
+
   /**
    *
    * @param configMethod i.e: fromKubeconfig()
    * @param version i.e: 1.9
    */
-  constructor(
+  static async getInstance(
     endpoint: string,
     crdVersion: string,
     configMethod: string,
     clientVersion: string = '1.9',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    this.watchTimeoutMS = watchTimeoutMS;
     const config = eval(`K8sConfig.${configMethod}`);
+    let client = null;
     if (configMethod === 'getInCluster()') {
-      this.client = new Client({ config: config });
-      this.client.loadSpec();
+      const backend = new Request(Request.config.getInCluster());
+      client = new Client({ backend: backend });
+      await client.loadSpec();
     } else if (configMethod === 'fromKubeconfig()') {
-      this.client = new Client({ config: config, version: clientVersion });
+      client = new Client({ config: config, version: clientVersion });
     } else throw new Error(`${COMM_INTERFACE} config method not recognized`);
-    this.basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
+    const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
+    return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
 
   async createCRD(body: string, kubeEndPoint: string = 'apiextensions.k8s.io') {
