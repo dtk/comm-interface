@@ -1,6 +1,8 @@
 const grpc = require('grpc');
 const protoLoader = require('@grpc/proto-loader');
 const grpc_promise = require('grpc-promise');
+const health = require('grpc-health-check');
+const health_messages = require('grpc-health-check/v1/health_pb');
 
 export default class GrpcServer {
   private serverAddress: string;
@@ -88,9 +90,23 @@ export default class GrpcServer {
     return server;
   }
 
+  private addHealthService() {
+    if (!this.server) throw 'Server not found';
+    const ServingStatus = health_messages.HealthCheckResponse.ServingStatus;
+    const statusMap = {
+      SERVING: ServingStatus.SERVING,
+      NOT_SERVING: ServingStatus.NOT_SERVING,
+      '': ServingStatus.SERVING,
+    };
+    let healthImplementation = new health.Implementation(statusMap);
+    this.server.addService(health.service, healthImplementation);
+    console.log('Health service added');
+  }
+
   start() {
     if (!this.serverStarted) {
       this.server = this.resolveServer();
+      this.addHealthService();
       this.server.start();
       this.serverStarted = true;
       if (this.debugMode) console.log('Server started', this.server);
@@ -103,10 +119,5 @@ export default class GrpcServer {
       this.serverStarted = false;
       console.log('Server shut down success');
     } else console.log('Server not started');
-  }
-
-  addHealthService(healthService: any, healthImplementation: any) {
-    if (!this.server) throw 'Server not started';
-    this.server.addService(healthService, healthImplementation);
   }
 }
