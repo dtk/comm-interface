@@ -64,7 +64,7 @@ export default class GoDaddyKubeApi {
     instanceName: string
   ) {
     return await eval(
-      `${this.basePath}.namespace('${namespace}').${plural}('${instanceName}')`
+      `${this.basePath}.namespaces('${namespace}').${plural}('${instanceName}')`
     );
   }
 
