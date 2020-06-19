@@ -1,6 +1,6 @@
 {
   "name": "@dtk/comm-interface",
-  "version": "0.0.22",
+  "version": "0.0.3",
   "description": "Communication interface",
   "main": "out/index.js",
   "types": "out/index.d.ts",
