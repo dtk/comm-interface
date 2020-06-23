@@ -1,7 +1,7 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 
 const Client = require('kubernetes-client').Client;
-const K8sConfig = require('kubernetes-client').config;
+const K8sConfig = require('kubernetes-client/backends/request').config;
 const JSONStream = require('json-stream');
 const Request = require('kubernetes-client/backends/request');
 export default class GoDaddyKubeApi {
