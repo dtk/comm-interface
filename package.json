@@ -13,19 +13,19 @@
   "license": "ISC",
   "devDependencies": {
     "prettier": "^1.19.1",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.5"
   },
   "dependencies": {
-    "@babel/cli": "^7.10.1",
-    "@babel/core": "^7.10.2",
-    "@babel/node": "^7.10.1",
-    "@babel/plugin-transform-runtime": "^7.10.1",
-    "@babel/preset-env": "^7.10.2",
-    "@babel/register": "^7.10.1",
-    "@babel/runtime": "^7.10.2",
+    "@babel/cli": "^7.10.3",
+    "@babel/core": "^7.10.3",
+    "@babel/node": "^7.10.3",
+    "@babel/plugin-transform-runtime": "^7.10.3",
+    "@babel/preset-env": "^7.10.3",
+    "@babel/register": "^7.10.3",
+    "@babel/runtime": "^7.10.3",
     "@grpc/proto-loader": "^0.4.0",
     "@kubernetes/client-node": "^0.8.2",
-    "grpc": "^1.24.2",
+    "grpc": "^1.24.3",
     "grpc-health-check": "^1.8.0",
     "grpc-promise": "^1.4.0",
     "kubernetes-client": "^9.0.0",
