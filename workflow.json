@@ -1,0 +1,74 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1beta1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "name": "workflowinstance.dtk.io"
+  },
+  "spec": {
+    "group": "dtk.io",
+    "version": "v1alpha1",
+    "scope": "Namespaced",
+    "names": {
+      "plural": "workflowinstance",
+      "singular": "workflowinstance",
+      "kind": "WorkflowInstance"
+    },
+    "validation": {
+      "openAPIV3Schema": {
+        "required": ["references", "spec"],
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "description": "Parent id for child actions"
+          },
+          "dtk_options": {
+            "properties": {
+              "force": {
+                "type": "boolean"
+              }
+            }
+          },
+          "references": {
+            "required": ["assembly", "workflow"],
+            "properties": {
+              "assembly": {
+                "description": "This property is a reference to the component instance that this workflow is on",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  }
+                }
+              },
+              "workflow": {
+                "description": "This property is a reference to the workflow template that this workflow instance derived from",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "namespace": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "spec": {
+            "properties": {
+              "attributes": {
+                "type": "array"
+              },
+              "workflow": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

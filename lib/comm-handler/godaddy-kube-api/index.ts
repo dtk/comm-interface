@@ -33,6 +33,8 @@ export default class GoDaddyKubeApi {
   ) {
     const config = eval(`K8sConfig.${configMethod}`);
     let client = null;
+    console.log('Getting instance...');
+    console.log('Config method', configMethod);
     if (configMethod === 'getInCluster()') {
       // const backend = new Request(Request.config.getInCluster());
       // client = new Client({ backend: backend });
