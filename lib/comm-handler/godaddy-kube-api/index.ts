@@ -28,14 +28,19 @@ export default class GoDaddyKubeApi {
     endpoint: string,
     crdVersion: string,
     configMethod: string,
-    clientVersion: string = '1.9',
+    clientVersion: string = '1.14',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
     const config = eval(`K8sConfig.${configMethod}`);
     let client = null;
     if (configMethod === 'getInCluster()') {
-      const backend = new Request(Request.config.getInCluster());
-      client = new Client({ backend: backend });
+      // const backend = new Request(Request.config.getInCluster());
+      // client = new Client({ backend: backend });
+      // await client.loa
+      client = new Client({
+        backend: new Request(config),
+        version: clientVersion,
+      });
       await client.loadSpec();
     } else if (configMethod === 'fromKubeconfig()') {
       client = new Client({ config: config, version: clientVersion });
