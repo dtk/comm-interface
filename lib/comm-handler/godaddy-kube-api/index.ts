@@ -37,8 +37,11 @@ export default class GoDaddyKubeApi {
     let client = null;
     console.log('Getting instance...');
     console.log('Config method', configMethod);
+    console.log(`kubeconfig: ${JSON.stringify(kubeconfig)}`)
     if (configMethod === 'getInCluster()') {
+      console.log("Method is getIncluster()")
       kubeconfig.loadFromCluster();
+      console.log(`kubeconfig: ${JSON.stringify(kubeconfig)}`)
       // client = new Client({
       //   backend: new Request(config),
       //   version: clientVersion,
@@ -47,7 +50,8 @@ export default class GoDaddyKubeApi {
         backend: new Request({ kubeconfig }),
         version: clientVersion
       });
-      await client.loadSpec();
+      console.log(`client: ${JSON.stringify(client)}`)
+      // await client.loadSpec();
     } else if (configMethod === 'fromKubeconfig()') {
       kubeconfig.loadFromDefault();
       client = new Client({ backend: kubeconfig, version: clientVersion });
