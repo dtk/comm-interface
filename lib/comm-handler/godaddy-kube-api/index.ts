@@ -1,11 +1,15 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 
-const { KubeConfig } = require('kubernetes-client');
-const kubeconfig = new KubeConfig();
-const Client = require('kubernetes-client').Client;
-const K8sConfig = require('kubernetes-client/backends/request').config;
+import { Client1_13 } from 'kubernetes-client';
+const { KubeConfig } = require('kubernetes-client')
+const Request = require('kubernetes-client/backends/request')
+
+// const { KubeConfig } = require('kubernetes-client');
+// const kubeconfig = new KubeConfig();
+// const Client = require('kubernetes-client').Client;
+// const K8sConfig = require('kubernetes-client/backends/request').config;
 const JSONStream = require('json-stream');
-const Request = require('kubernetes-client/backends/request');
+// const Request = require('kubernetes-client/backends/request');
 export default class GoDaddyKubeApi {
   private client: any;
   private basePath: any;
@@ -30,32 +34,13 @@ export default class GoDaddyKubeApi {
     endpoint: string,
     crdVersion: string,
     configMethod: string,
-    clientVersion: string = '1.14',
+    clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    // const config = eval(`K8sConfig.${configMethod}`);
-    let client = null;
-    console.log('Getting instance...');
-    console.log('Config method', configMethod);
-    console.log(`kubeconfig: ${JSON.stringify(kubeconfig)}`)
-    if (configMethod === 'getInCluster()') {
-      console.log("Method is getIncluster()")
-      kubeconfig.loadFromCluster();
-      console.log(`kubeconfig: ${JSON.stringify(kubeconfig)}`)
-      // client = new Client({
-      //   backend: new Request(config),
-      //   version: clientVersion,
-      // });
-      client = new Client({
-        backend: new Request({ kubeconfig }),
-        version: clientVersion
-      });
-      console.log(`client: ${JSON.stringify(client)}`)
-      // await client.loadSpec();
-    } else if (configMethod === 'fromKubeconfig()') {
-      kubeconfig.loadFromDefault();
-      client = new Client({ backend: kubeconfig, version: clientVersion });
-    } else throw new Error(`${COMM_INTERFACE} config method not recognized`);
+    const kubeconfig = new KubeConfig();
+    kubeconfig.loadFromCluster();
+    const backend = new Request({ kubeconfig });
+    let client = await new Client1_13( {options: { backend: backend, version: crdVersion} });
     const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
