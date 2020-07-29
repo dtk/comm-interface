@@ -1,15 +1,19 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 
-import { Client1_13 } from 'kubernetes-client';
-const { KubeConfig } = require('kubernetes-client')
-const Request = require('kubernetes-client/backends/request')
-
-// const { KubeConfig } = require('kubernetes-client');
-// const kubeconfig = new KubeConfig();
 // const Client = require('kubernetes-client').Client;
 // const K8sConfig = require('kubernetes-client/backends/request').config;
 const JSONStream = require('json-stream');
 // const Request = require('kubernetes-client/backends/request');
+
+import { Client1_13 } from 'kubernetes-client';
+
+const Kubernetes = require('kubernetes-client');
+const Request = require('kubernetes-client/backends/request');
+const kubeconfig = new Kubernetes.KubeConfig();
+kubeconfig.loadFromCluster();
+const backend = new Request({ kubeconfig });
+
+
 export default class GoDaddyKubeApi {
   private client: any;
   private basePath: any;
@@ -37,10 +41,7 @@ export default class GoDaddyKubeApi {
     clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    const kubeconfig = new KubeConfig();
-    kubeconfig.loadFromCluster();
-    const backend = new Request({ kubeconfig });
-    let client = await new Client1_13( {options: { backend: backend, version: crdVersion} });
+    let client = await new Client1_13({ backend });
     const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
