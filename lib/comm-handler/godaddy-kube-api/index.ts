@@ -42,15 +42,34 @@ export default class GoDaddyKubeApi {
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
     let client = await new Client1_13({ backend });
-    const basePath = `this.client.api['${endpoint}'].${crdVersion}`;
+    const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
+
+    // TEST //
+    try {
+      const customresource = await client.apis['apiextensions.k8s.io'].v1beta1.customresourcedefinition.get({name:'component.dtk.io'});
+      console.log(`Custom resource def for []: ${JSON.stringify(customresource)}`);
+    } catch(e) {
+      console.log(`E in [] ${e}`);
+    }
+
+    try {
+      const namespaces = await client.api.v1.namespaces.get();
+      console.log(`Namespaces []: ${JSON.stringify(namespaces)}`);
+    } catch(e) {
+      console.log(`E in namespaces ${e}`);
+    }
+
+
+    // TEST //
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
 
   async createCRD(body: string, kubeEndPoint: string = 'apiextensions.k8s.io') {
-    return await this.client.api[
+    return await this.client.apis[
       kubeEndPoint
     ].v1beta1.customresourcedefinitions.post({ body: body });
   }
+
 
   async addCRD(body: any) {
     await this.client.addCustomResourceDefinition(body);
