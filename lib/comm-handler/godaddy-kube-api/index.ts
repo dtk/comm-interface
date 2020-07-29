@@ -42,12 +42,12 @@ export default class GoDaddyKubeApi {
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
     let client = await new Client1_13({ backend });
-    const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
+    const basePath = `this.client.api['${endpoint}'].${crdVersion}`;
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
 
   async createCRD(body: string, kubeEndPoint: string = 'apiextensions.k8s.io') {
-    return await this.client.apis[
+    return await this.client.api[
       kubeEndPoint
     ].v1beta1.customresourcedefinitions.post({ body: body });
   }
