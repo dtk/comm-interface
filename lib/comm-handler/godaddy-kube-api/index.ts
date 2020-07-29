@@ -1,18 +1,9 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
-
-// const Client = require('kubernetes-client').Client;
-// const K8sConfig = require('kubernetes-client/backends/request').config;
 const JSONStream = require('json-stream');
-// const Request = require('kubernetes-client/backends/request');
-
 import { Client1_13 } from 'kubernetes-client';
-
-const Kubernetes = require('kubernetes-client');
+const { KubeConfig } = require('kubernetes-client')
 const Request = require('kubernetes-client/backends/request');
-const kubeconfig = new Kubernetes.KubeConfig();
-kubeconfig.loadFromCluster();
-const backend = new Request({ kubeconfig });
-
+const kubeconfig = new KubeConfig();
 
 export default class GoDaddyKubeApi {
   private client: any;
@@ -41,26 +32,17 @@ export default class GoDaddyKubeApi {
     clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
+    if(configMethod == "getInCluster()") {
+      kubeconfig.loadFromCluster();
+    } else if(configMethod == "fromKubeconfig()") {
+      kubeconfig.loadFromDefault();
+    } else { 
+      throw new Error(`Config method ${configMethod} is not recognized`);
+    }
+
+    const backend = new Request({ kubeconfig });
     let client = await new Client1_13({ backend });
     const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
-
-    // TEST //
-    try {
-      const customresource = await client.apis['apiextensions.k8s.io'].v1beta1.customresourcedefinition.get({name:'component.dtk.io'});
-      console.log(`Custom resource def for []: ${JSON.stringify(customresource)}`);
-    } catch(e) {
-      console.log(`E in [] ${e}`);
-    }
-
-    try {
-      const namespaces = await client.api.v1.namespaces.get();
-      console.log(`Namespaces []: ${JSON.stringify(namespaces)}`);
-    } catch(e) {
-      console.log(`E in namespaces ${e}`);
-    }
-
-
-    // TEST //
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
 
