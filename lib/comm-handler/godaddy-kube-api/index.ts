@@ -29,15 +29,6 @@ export default class GoDaddyKubeApi {
     clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    // if(configMethod == "getInCluster()") {
-    //   kubeconfig.loadFromCluster();
-    // } else if(configMethod == "fromKubeconfig()") {
-    //   kubeconfig.loadFromDefault();
-    // } else { 
-    //   throw new Error(`Config method ${configMethod} is not recognized`);
-    // }
-
-    // const backend = new Request({ kubeconfig });
     let client = new Client({ version: clientVersion });
     await client.loadSpec();
 
@@ -142,7 +133,7 @@ export default class GoDaddyKubeApi {
     actionId: string = '',
     watchEndedCallback: Function = () => {}
   ) {
-    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
     if (actionId) {
       stream.on('end', async () => {
         const workflowInstancePath = await this.getBaseCRDInstancePath(
@@ -191,7 +182,7 @@ export default class GoDaddyKubeApi {
     plural: string,
     promiseCallback: Function
   ) {
-    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
     const jsonStream = new JSONStream();
     stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
