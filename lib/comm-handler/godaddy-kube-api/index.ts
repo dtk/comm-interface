@@ -1,9 +1,6 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
 const JSONStream = require('json-stream');
-import { Client1_13 } from 'kubernetes-client';
-const { KubeConfig } = require('kubernetes-client')
-const Request = require('kubernetes-client/backends/request');
-const kubeconfig = new KubeConfig();
+const Client = require('kubernetes-client').Client;
 
 export default class GoDaddyKubeApi {
   private client: any;
@@ -32,16 +29,18 @@ export default class GoDaddyKubeApi {
     clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    if(configMethod == "getInCluster()") {
-      kubeconfig.loadFromCluster();
-    } else if(configMethod == "fromKubeconfig()") {
-      kubeconfig.loadFromDefault();
-    } else { 
-      throw new Error(`Config method ${configMethod} is not recognized`);
-    }
+    // if(configMethod == "getInCluster()") {
+    //   kubeconfig.loadFromCluster();
+    // } else if(configMethod == "fromKubeconfig()") {
+    //   kubeconfig.loadFromDefault();
+    // } else { 
+    //   throw new Error(`Config method ${configMethod} is not recognized`);
+    // }
 
-    const backend = new Request({ kubeconfig });
-    let client = await new Client1_13({ backend });
+    // const backend = new Request({ kubeconfig });
+    let client = new Client({ version: clientVersion });
+    await client.loadSpec();
+
     const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
@@ -211,9 +210,5 @@ export default class GoDaddyKubeApi {
 
   async getSimplePath() {
     return this.basePath;
-  }
-
-  getClient() {
-    return this.client;
   }
 }
