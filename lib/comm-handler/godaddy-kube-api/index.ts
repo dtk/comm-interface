@@ -211,4 +211,8 @@ export default class GoDaddyKubeApi {
   async getSimplePath() {
     return this.basePath;
   }
+
+  getClient() {
+    return this.client;
+  }
 }
