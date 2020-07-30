@@ -1,5 +1,4 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
-const JSONStream = require('json-stream');
 const Client = require('kubernetes-client').Client;
 
 export default class GoDaddyKubeApi {
@@ -157,10 +156,8 @@ export default class GoDaddyKubeApi {
       });
     }
 
-    const jsonStream = new JSONStream();
-    stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
-      jsonStream.on('data', async (event: any) => {
+      stream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
           promiseCallback(event, stream, resolve, reject);
@@ -183,14 +180,12 @@ export default class GoDaddyKubeApi {
     promiseCallback: Function
   ) {
     const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
-    const jsonStream = new JSONStream();
-    stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
       setTimeout(() => {
         stream.abort();
         reject({ watchTimeout: 'Watch timed out' });
       }, this.watchTimeoutMS);
-      jsonStream.on('data', async (event: any) => {
+      stream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
           promiseCallback(event, stream, resolve, reject);
