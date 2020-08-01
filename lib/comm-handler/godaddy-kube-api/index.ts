@@ -147,6 +147,7 @@ export default class GoDaddyKubeApi {
           name,
           namespace
         );
+        stream.destroy();
         await watchEndedCallback(
           actionState === 'EXECUTING' && !(parentState === 'FAILURE'),
           this,
@@ -181,6 +182,7 @@ export default class GoDaddyKubeApi {
     const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
     return new Promise(async (resolve, reject) => {
       setTimeout(() => {
+        stream.destroy();
         reject({ watchTimeout: 'Watch timed out' });
       }, this.watchTimeoutMS);
       stream.on('data', async (event: any) => {
