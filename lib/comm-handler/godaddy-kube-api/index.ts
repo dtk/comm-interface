@@ -1,9 +1,6 @@
 import { COMM_INTERFACE, WATCH_TIMEOUT_MS } from '../../constants';
-
 const Client = require('kubernetes-client').Client;
-const K8sConfig = require('kubernetes-client').config;
-const JSONStream = require('json-stream');
-const Request = require('kubernetes-client/backends/request');
+
 export default class GoDaddyKubeApi {
   private client: any;
   private basePath: any;
@@ -28,18 +25,12 @@ export default class GoDaddyKubeApi {
     endpoint: string,
     crdVersion: string,
     configMethod: string,
-    clientVersion: string = '1.9',
+    clientVersion: string = '1.13',
     watchTimeoutMS: number = WATCH_TIMEOUT_MS
   ) {
-    const config = eval(`K8sConfig.${configMethod}`);
-    let client = null;
-    if (configMethod === 'getInCluster()') {
-      const backend = new Request(Request.config.getInCluster());
-      client = new Client({ backend: backend });
-      await client.loadSpec();
-    } else if (configMethod === 'fromKubeconfig()') {
-      client = new Client({ config: config, version: clientVersion });
-    } else throw new Error(`${COMM_INTERFACE} config method not recognized`);
+    let client = new Client({ version: clientVersion });
+    await client.loadSpec();
+
     const basePath = `this.client.apis['${endpoint}'].${crdVersion}`;
     return new GoDaddyKubeApi(client, basePath, watchTimeoutMS);
   }
@@ -49,6 +40,7 @@ export default class GoDaddyKubeApi {
       kubeEndPoint
     ].v1beta1.customresourcedefinitions.post({ body: body });
   }
+
 
   async addCRD(body: any) {
     await this.client.addCustomResourceDefinition(body);
@@ -140,7 +132,7 @@ export default class GoDaddyKubeApi {
     actionId: string = '',
     watchEndedCallback: Function = () => {}
   ) {
-    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
+    const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
     if (actionId) {
       stream.on('end', async () => {
         const workflowInstancePath = await this.getBaseCRDInstancePath(
@@ -155,7 +147,7 @@ export default class GoDaddyKubeApi {
           name,
           namespace
         );
-        stream.abort();
+        stream.destroy();
         await watchEndedCallback(
           actionState === 'EXECUTING' && !(parentState === 'FAILURE'),
           this,
@@ -164,10 +156,8 @@ export default class GoDaddyKubeApi {
       });
     }
 
-    const jsonStream = new JSONStream();
-    stream.pipe(jsonStream);
     return new Promise(async (resolve, reject) => {
-      jsonStream.on('data', async (event: any) => {
+      stream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
           promiseCallback(event, stream, resolve, reject);
@@ -189,15 +179,13 @@ export default class GoDaddyKubeApi {
     plural: string,
     promiseCallback: Function
   ) {
-    const stream = await eval(`${this.basePath}.watch.${plural}.getStream()`);
-    const jsonStream = new JSONStream();
-    stream.pipe(jsonStream);
+    const stream = await eval(`${this.basePath}.watch.${plural}.getObjectStream()`);
     return new Promise(async (resolve, reject) => {
       setTimeout(() => {
-        stream.abort();
+        stream.destroy();
         reject({ watchTimeout: 'Watch timed out' });
       }, this.watchTimeoutMS);
-      jsonStream.on('data', async (event: any) => {
+      stream.on('data', async (event: any) => {
         const { metadata } = event.object;
         if (name == metadata.name && namespace == metadata.namespace) {
           promiseCallback(event, stream, resolve, reject);
