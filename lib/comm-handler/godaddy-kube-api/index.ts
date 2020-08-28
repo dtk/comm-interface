@@ -51,7 +51,7 @@ export default class GoDaddyKubeApi {
   }
 
   async getServiceSelectorLabels(namespace: string, serviceName: string) {
-    let service = await this.client.api.v1.namespaces(namespace).services(name).get();
+    let service = await this.client.api.v1.namespaces(namespace).services(serviceName).get();
     console.dir("Service content:");
     console.dir(service, {colors: true});
 
