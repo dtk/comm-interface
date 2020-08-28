@@ -50,6 +50,32 @@ export default class GoDaddyKubeApi {
     return await this.client.api.v1.namespaces.post({ body: body });
   }
 
+  async getServiceSelectorLabels(namespace: string, serviceName: string) {
+    let service = await this.client.api.v1.namespaces(namespace).services(name).get();
+    console.dir("Service content:");
+    console.dir(service, {colors: true});
+
+    // tmp just for the sake of testing
+    return { app: 'controller-manager-api' };
+  }
+
+  async getPodsFromSpecificService(namespace: string, serviceName: string) {
+    let selectorLabels = await this.getServiceSelectorLabels(namespace, serviceName);
+    let labelKey = Object.keys(selectorLabels)[0];
+    let labelValue = Object.values(selectorLabels)[0];
+
+    let pods = await this.client.api.v1.namespaces(namespace).pods.get({
+      qs: {
+        labelSelector: `${labelKey}=${labelValue}`
+      },
+    });
+
+    for (let pod of pods) {
+      console.dir("Pods:");
+      console.dir(pod, {color:true});
+    }
+  }
+
   async getBaseCRDInstancePath(
     namespace: string,
     plural: string,
