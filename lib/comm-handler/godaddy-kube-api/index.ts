@@ -50,29 +50,102 @@ export default class GoDaddyKubeApi {
     return await this.client.api.v1.namespaces.post({ body: body });
   }
 
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * returns selector labels from the service
+   */
   async getServiceSelectorLabels(namespace: string, serviceName: string) {
     let service = await this.client.api.v1.namespaces(namespace).services(serviceName).get();
-    console.dir("Service content:");
-    console.dir(service, {colors: true});
-
-    // tmp just for the sake of testing
-    return { app: 'controller-manager-api' };
+    return service.body.spec.selector;
   }
 
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * based on selector labels from the service, it selects corresponding pods
+   */
   async getPodsFromSpecificService(namespace: string, serviceName: string) {
     let selectorLabels = await this.getServiceSelectorLabels(namespace, serviceName);
     let labelKey = Object.keys(selectorLabels)[0];
     let labelValue = Object.values(selectorLabels)[0];
-
     let pods = await this.client.api.v1.namespaces(namespace).pods.get({
       qs: {
         labelSelector: `${labelKey}=${labelValue}`
       },
     });
+    return pods.body.items;
+  }
 
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * returns list of nodeNames on which pods are running
+   */
+  async getNodeNamesAssociatedWithPods(namespace: string, serviceName: string) {
+    let nodeNames = [];
+    let pods = await this.getPodsFromSpecificService(namespace, serviceName);
     for (let pod of pods) {
-      console.dir("Pods:");
-      console.dir(pod, {color:true});
+      nodeNames.push(pod.spec.nodeName);
+    }
+    return nodeNames;
+  }
+
+  /**
+   * 
+   * @param daemonSetObject
+   * @param namespace
+   * @param replicaCount
+   * This method creates daemonset based on the daemonSetObject passed as argument.
+   * It also fetches the state to verify that number of running (and ready) pods is equal to expected replicaCount (which suggest that daemonSet is running successfully)
+   * Returns true/false based on the success of daemonSet creation.
+   */
+  async createDaemonSet(daemonSetObject: any, namespace: string, replicaCount: number) {
+    try {
+      let daemonSetCreated = await this.client.apis.apps.v1.namespaces(namespace).daemonsets.post({ body: daemonSetObject });
+      let maxRetries = 10;
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        let daemonSetStatus = await this.client.apis.apps.v1.namespaces(namespace).daemonsets(daemonSetCreated.body.metadata.name).status.get();
+        if (daemonSetStatus.body.status.numberReady < replicaCount) {
+          console.log(`Telegraf DaemonSet: number of current replicas: ${daemonSetStatus.body.status.numberReady}, number of expected replicas: ${replicaCount}`);
+          console.log(`Waiting for Telegraf DaemonSet to be ready`);
+          this.sleep(3000);
+          retryCount++;
+        } else {
+          console.log("Telegraf DaemonSet is ready");
+          return true;
+        }   
+      }
+
+      if (retryCount == maxRetries) {
+        console.log("Telegraf DaemonSet is not ready. Aborting further operations. Please check logs of Telegraf Daemonset");
+        return false;
+      }  
+    } catch (err) {
+      console.error('Error when creating DaemonSet: ', err)
+      return false;
+    }
+  }
+
+  /**
+   * 
+   * @param daemonSetName
+   * @param namespace
+   * This method deletes daemonset and verify that deletion passed successfully.
+   * Returns true/false based on the success of daemonSet deletion.
+   */
+  async deleteDaemonSet(daemonSetName: string, namespace: string) {
+    try {
+      let daemonSetDeleted = await this.client.apis.apps.v1.namespaces(namespace).daemonsets(daemonSetName).delete();
+      if (daemonSetDeleted.body.status == "Success") return true;
+    } catch (err) {
+      console.error('Error when deleting DaemonSet: ', err);
+      return false;
     }
   }
 
@@ -226,5 +299,9 @@ export default class GoDaddyKubeApi {
 
   getClient() {
     return this.client;
+  }
+
+  async sleep(ms: any) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
