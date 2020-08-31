@@ -63,17 +63,25 @@ export default class GoDaddyKubeApi {
 
   /**
    *
+   * @param selectorLabels
+   * returns selector labels in form: key1=value1,key2=value2 form which is needed for query selector
+   */
+  async prepareSelectorLabelsForQuery(selectorLabels: string) {
+    let labelsObj = JSON.stringify(selectorLabels);
+    return labelsObj.replace(/\:/gi, "=").replace(/\"/gi, "").replace(/\{/gi, "").replace(/\}/gi, "");
+  }
+
+  /**
+   *
    * @param namespace
    * @param serviceName
    * based on selector labels from the service, it selects corresponding pods
    */
   async getPodsFromSpecificService(namespace: string, serviceName: string) {
     let selectorLabels = await this.getServiceSelectorLabels(namespace, serviceName);
-    let labelKey = Object.keys(selectorLabels)[0];
-    let labelValue = Object.values(selectorLabels)[0];
     let pods = await this.client.api.v1.namespaces(namespace).pods.get({
       qs: {
-        labelSelector: `${labelKey}=${labelValue}`
+        labelSelector: await this.prepareSelectorLabelsForQuery(selectorLabels)
       },
     });
     return pods.body.items;
@@ -88,7 +96,9 @@ export default class GoDaddyKubeApi {
   async getNodeNamesAssociatedWithPods(namespace: string, serviceName: string) {
     let nodeNames = [];
     let pods = await this.getPodsFromSpecificService(namespace, serviceName);
+    console.dir(`Matched pods for user service ${serviceName} are: `)
     for (let pod of pods) {
+      console.dir(pod.metadata.name, {colors: true});
       nodeNames.push(pod.spec.nodeName);
     }
     return nodeNames;
@@ -112,20 +122,20 @@ export default class GoDaddyKubeApi {
       while (retryCount < maxRetries) {
         let daemonSetStatus = await this.client.apis.apps.v1.namespaces(namespace).daemonsets(daemonSetCreated.body.metadata.name).status.get();
         if (daemonSetStatus.body.status.numberReady < replicaCount) {
-          console.log(`Telegraf DaemonSet: number of current replicas: ${daemonSetStatus.body.status.numberReady}, number of expected replicas: ${replicaCount}`);
+          console.dir(`Telegraf DaemonSet: number of current replicas: ${daemonSetStatus.body.status.numberReady}, number of expected replicas: ${replicaCount}`, {colors: true});
           console.log(`Waiting for Telegraf DaemonSet to be ready`);
           this.sleep(3000);
           retryCount++;
         } else {
-          console.log("Telegraf DaemonSet is ready");
+          console.dir("Telegraf DaemonSet is ready", {colors: true});
           return true;
         }   
       }
 
       if (retryCount == maxRetries) {
-        console.log("Telegraf DaemonSet is not ready. Aborting further operations. Please check logs of Telegraf Daemonset");
+        console.dir("Telegraf DaemonSet is not ready. Aborting further operations. Please check logs of Telegraf Daemonset", {colors: true});
         return false;
-      }  
+      }
     } catch (err) {
       console.error('Error when creating DaemonSet: ', err)
       return false;
