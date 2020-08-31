@@ -124,7 +124,7 @@ export default class GoDaddyKubeApi {
         if (daemonSetStatus.body.status.numberReady < replicaCount) {
           console.dir(`Telegraf DaemonSet: number of current replicas: ${daemonSetStatus.body.status.numberReady}, number of expected replicas: ${replicaCount}`, {colors: true});
           console.log(`Waiting for Telegraf DaemonSet to be ready`);
-          this.sleep(3000);
+          await this.sleep(3000);
           retryCount++;
         } else {
           console.dir("Telegraf DaemonSet is ready", {colors: true});
@@ -133,7 +133,7 @@ export default class GoDaddyKubeApi {
       }
 
       if (retryCount == maxRetries) {
-        console.dir("Telegraf DaemonSet is not ready. Aborting further operations. Please check logs of Telegraf Daemonset", {colors: true});
+        console.dir("Telegraf DaemonSet is not ready. Aborting further operations", {colors: true});
         return false;
       }
     } catch (err) {
