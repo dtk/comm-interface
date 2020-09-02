@@ -50,6 +50,115 @@ export default class GoDaddyKubeApi {
     return await this.client.api.v1.namespaces.post({ body: body });
   }
 
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * returns selector labels from the service
+   */
+  async getServiceSelectorLabels(namespace: string, serviceName: string) {
+    let service = await this.client.api.v1.namespaces(namespace).services(serviceName).get();
+    return service.body.spec.selector;
+  }
+
+  /**
+   *
+   * @param selectorLabels
+   * returns selector labels in form: key1=value1,key2=value2 form which is needed for query selector
+   */
+  async prepareSelectorLabelsForQuery(selectorLabels: string) {
+    let labelsObj = JSON.stringify(selectorLabels);
+    return labelsObj.replace(/\:/gi, "=").replace(/\"/gi, "").replace(/\{/gi, "").replace(/\}/gi, "");
+  }
+
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * based on selector labels from the service, it selects corresponding pods
+   */
+  async getPodsFromSpecificService(namespace: string, serviceName: string) {
+    let selectorLabels = await this.getServiceSelectorLabels(namespace, serviceName);
+    let pods = await this.client.api.v1.namespaces(namespace).pods.get({
+      qs: {
+        labelSelector: await this.prepareSelectorLabelsForQuery(selectorLabels)
+      },
+    });
+    return pods.body.items;
+  }
+
+  /**
+   *
+   * @param namespace
+   * @param serviceName
+   * returns list of nodeNames on which pods are running
+   */
+  async getNodeNamesAssociatedWithPods(namespace: string, serviceName: string) {
+    let nodeNames = [];
+    let pods = await this.getPodsFromSpecificService(namespace, serviceName);
+    console.dir(`Matched pods for user service ${serviceName} are: `)
+    for (let pod of pods) {
+      console.dir(pod.metadata.name, {colors: true});
+      nodeNames.push(pod.spec.nodeName);
+    }
+    return nodeNames;
+  }
+
+  /**
+   * 
+   * @param daemonSetObject
+   * @param namespace
+   * @param replicaCount
+   * This method creates daemonset based on the daemonSetObject passed as argument.
+   * It also fetches the state to verify that number of running (and ready) pods is equal to expected replicaCount (which suggest that daemonSet is running successfully)
+   * Returns true/false based on the success of daemonSet creation.
+   */
+  async createDaemonSet(daemonSetObject: any, namespace: string, replicaCount: number) {
+    try {
+      let daemonSetCreated = await this.client.apis.apps.v1.namespaces(namespace).daemonsets.post({ body: daemonSetObject });
+      let maxRetries = 10;
+      let retryCount = 0;
+
+      while (retryCount < maxRetries) {
+        let daemonSetStatus = await this.client.apis.apps.v1.namespaces(namespace).daemonsets(daemonSetCreated.body.metadata.name).status.get();
+        if (daemonSetStatus.body.status.numberReady < replicaCount) {
+          console.dir(`Telegraf DaemonSet: number of current replicas: ${daemonSetStatus.body.status.numberReady}, number of expected replicas: ${replicaCount}`, {colors: true});
+          console.log(`Waiting for Telegraf DaemonSet to be ready`);
+          await this.sleep(3000);
+          retryCount++;
+        } else {
+          console.dir("Telegraf DaemonSet is ready", {colors: true});
+          return true;
+        }   
+      }
+
+      if (retryCount == maxRetries) {
+        console.dir("Telegraf DaemonSet is not ready. Aborting further operations", {colors: true});
+        return false;
+      }
+    } catch (err) {
+      console.error('Error when creating DaemonSet: ', err)
+      return false;
+    }
+  }
+
+  /**
+   * 
+   * @param daemonSetName
+   * @param namespace
+   * This method deletes daemonset and verify that deletion passed successfully.
+   * Returns true/false based on the success of daemonSet deletion.
+   */
+  async deleteDaemonSet(daemonSetName: string, namespace: string) {
+    try {
+      let daemonSetDeleted = await this.client.apis.apps.v1.namespaces(namespace).daemonsets(daemonSetName).delete();
+      if (daemonSetDeleted.body.status == "Success") return true;
+    } catch (err) {
+      console.error('Error when deleting DaemonSet: ', err);
+      return false;
+    }
+  }
+
   async getBaseCRDInstancePath(
     namespace: string,
     plural: string,
@@ -200,5 +309,9 @@ export default class GoDaddyKubeApi {
 
   getClient() {
     return this.client;
+  }
+
+  async sleep(ms: any) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
